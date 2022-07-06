@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">ProductTask</string>
+    <string name="title_home">Home</string>
+    <string name="title_dashboard">Dashboard</string>
+    <string name="title_notifications">Notifications</string>
+    <string name="home">Home</string>
+    <string name="cart">Cart</string>
+    <string name="add_to_cart">Add To Cart</string>
+    <string name="remove">Remove</string>
+    <string name="how_app_work">How App Works</string>
+</resources>
