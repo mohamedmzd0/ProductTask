@@ -2,6 +2,8 @@ package com.example.producttask.ui.fragment.cart
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.paging.DifferCallback
+import androidx.paging.PagingDataAdapter
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.example.producttask.data.Product
@@ -9,9 +11,7 @@ import com.example.producttask.databinding.ItemCartBinding
 import com.example.producttask.utils.DiffCallback
 
 class AdapterCart(private val onRemoveFromCart: (id: Int) -> Unit) :
-    RecyclerView.Adapter<AdapterCart.CartViewHolder>() {
-
-    private val listOfProducts = ArrayList<Product>()
+    PagingDataAdapter<Product,AdapterCart.CartViewHolder>(CART_DIFF_CALLBACK) {
 
     inner class CartViewHolder(private val binding: ItemCartBinding) :
         RecyclerView.ViewHolder(binding.root) {
@@ -20,14 +20,14 @@ class AdapterCart(private val onRemoveFromCart: (id: Int) -> Unit) :
             // set item clicked in view holder , no need to refresh action when recycling items
             binding.btnRemove.setOnClickListener {
                 // when recycling don't to any thing
-                if (adapterPosition == -1)
+                if (bindingAdapterPosition == -1)
                     return@setOnClickListener
-                onRemoveFromCart.invoke(listOfProducts[adapterPosition].productID)
+                getItem(bindingAdapterPosition)?.productID?.let { it1 -> onRemoveFromCart.invoke(it1) }
             }
         }
 
         fun bindItem() {
-            binding.tvProductTitle.text = listOfProducts[adapterPosition].productTitle
+            binding.tvProductTitle.text = getItem(bindingAdapterPosition)?.productTitle
         }
 
     }
@@ -46,21 +46,16 @@ class AdapterCart(private val onRemoveFromCart: (id: Int) -> Unit) :
         holder.bindItem()
     }
 
-    override fun getItemCount() = listOfProducts.size
+    companion object{
+        val CART_DIFF_CALLBACK=object :DiffUtil.ItemCallback<Product>(){
+            override fun areItemsTheSame(oldItem: Product, newItem: Product): Boolean {
+                return oldItem.productID==newItem.productID
+            }
 
-    fun setAll(data: List<Product>) {
-        val diffResult =
-            DiffUtil.calculateDiff(
-                DiffCallback(
-                    oldItems = this.listOfProducts,
-                    newItems = data
-                ), true
-            )
+            override fun areContentsTheSame(oldItem: Product, newItem: Product): Boolean {
+                return oldItem==newItem
+            }
 
-        this.listOfProducts.apply {
-            clear()
-            addAll(data)
         }
-        diffResult.dispatchUpdatesTo(this)
     }
 }

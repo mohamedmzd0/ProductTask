@@ -6,11 +6,13 @@ import android.view.View
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.lifecycleScope
+import androidx.paging.LoadState
 import com.example.producttask.R
-import com.example.producttask.data.Product
 import com.example.producttask.databinding.FragmentCartBinding
-import com.example.producttask.utils.extentions.getThreeDaysAgoDate
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 
 
 @AndroidEntryPoint
@@ -40,26 +42,33 @@ class CartFragment : Fragment(R.layout.fragment_cart) {
 
         setupRecyclerView()
         setupObserver()
-
-
+        setupAdapterListener()
     }
 
-    private fun setupObserver() {
-        cartViewModel.getCartLiveData(getThreeDaysAgoDate())
-            .observe(viewLifecycleOwner) { data ->
-                when {
-                    data.isNullOrEmpty() -> {
-                        showEmpty()
-                    }
-                    else -> {
-                        showData(data)
+    private fun setupAdapterListener() {
+        lifecycleScope.launch {
+            cartAdapter.loadStateFlow.collectLatest {
+                when (it.refresh) {
+                    is LoadState.NotLoading -> {
+                        if (cartAdapter.itemCount == 0)
+                            showEmpty()
+                        else
+                            showData()
                     }
                 }
             }
+        }
     }
 
-    private fun showData(data: List<Product>) {
-        cartAdapter.setAll(data)
+    private fun setupObserver() {
+        lifecycleScope.launch {
+            cartViewModel.getCartLiveData().collect { data ->
+                cartAdapter.submitData(data)
+            }
+        }
+    }
+
+    private fun showData() {
         binding.apply {
             recyclerViewCart.isVisible = true
             tvEmpty.isVisible = false

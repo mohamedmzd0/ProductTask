@@ -12,30 +12,13 @@ import javax.inject.Inject
 @HiltViewModel
 class HomeViewModel @Inject constructor(private val repository: ProductsRepository) : ViewModel() {
 
-    fun getProducts() = repository.getAllProducts()
+    fun getProducts() = repository.allProductsFlow
 
 
     fun insertData() {
         viewModelScope.launch(Dispatchers.IO) {
-            val data = ArrayList<Product>()
-            for (i in 1..10) {
-                data.add(
-                    Product(
-                        productID = i,
-                        productTitle = getRandomString(7),
-                        dateAddedToCart = null
-                    )
-                )
-            }
-            repository.insertProducts(data)
+            repository.insertRandomProducts()
         }
-    }
-
-    private fun getRandomString(length: Int): String {
-        val charset = "ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz0123456789"
-        return (1..length)
-            .map { charset.random() }
-            .joinToString("")
     }
 
     fun addToCard(id: Int) {

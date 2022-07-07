@@ -3,20 +3,18 @@ package com.example.producttask.ui.fragment.home
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.core.view.isVisible
+import androidx.paging.PagingDataAdapter
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.example.producttask.data.Product
 import com.example.producttask.databinding.ItemMainProductsBinding
-import com.example.producttask.utils.DiffCallback
 import com.example.producttask.utils.extentions.dateToString
 import com.example.producttask.utils.extentions.getThreeDaysAgoDate
 import java.util.*
 
 
 class AdapterProducts(private val onAddItemToCart: (id: Int) -> Unit) :
-    RecyclerView.Adapter<AdapterProducts.ProductsViewHolder>() {
-
-    private val listOfProducts = ArrayList<Product>()
+    PagingDataAdapter<Product, AdapterProducts.ProductsViewHolder>(PRODUCT_DIFF_CALLBACK) {
 
     inner class ProductsViewHolder(private val binding: ItemMainProductsBinding) :
         RecyclerView.ViewHolder(binding.root) {
@@ -27,9 +25,9 @@ class AdapterProducts(private val onAddItemToCart: (id: Int) -> Unit) :
             // set item clicked in view holder , no need to refresh action when recycling items
             binding.btnAddCart.setOnClickListener {
                 // when recycling don't to any thing
-                if (adapterPosition == -1)
+                if (bindingAdapterPosition == -1)
                     return@setOnClickListener
-                onAddItemToCart.invoke(listOfProducts[adapterPosition].productID)
+                getItem(bindingAdapterPosition)?.productID?.let { it1 -> onAddItemToCart.invoke(it1) }
 //                 updating ui will be done automatically because of using live data with room db
 
             }
@@ -37,15 +35,15 @@ class AdapterProducts(private val onAddItemToCart: (id: Int) -> Unit) :
 
         fun bindItem() {
             binding.apply {
-                tvProductTitle.text = listOfProducts[adapterPosition].productTitle
+                tvProductTitle.text = getItem(bindingAdapterPosition)?.productTitle
                 // if product added to cart hide button
                 btnAddCart.isVisible =
-                    listOfProducts[adapterPosition].dateAddedToCart?.after(threeDaysAgoDate) != true
+                    getItem(bindingAdapterPosition)?.dateAddedToCart?.after(threeDaysAgoDate) != true
                 tvAddedDate.isVisible =
-                    listOfProducts[adapterPosition].dateAddedToCart?.after(threeDaysAgoDate) == true
-                if (listOfProducts[adapterPosition].dateAddedToCart != null)
+                    getItem(bindingAdapterPosition)?.dateAddedToCart?.after(threeDaysAgoDate) == true
+                if (getItem(bindingAdapterPosition)?.dateAddedToCart != null)
                     tvAddedDate.text =
-                        "Added on Date \n ${listOfProducts[adapterPosition].dateAddedToCart.dateToString()}"
+                        "Added on Date \n ${getItem(bindingAdapterPosition)?.dateAddedToCart.dateToString()}"
             }
         }
 
@@ -65,22 +63,14 @@ class AdapterProducts(private val onAddItemToCart: (id: Int) -> Unit) :
         holder.bindItem()
     }
 
-    override fun getItemCount() = listOfProducts.size
 
-    fun setAll(data: List<Product>) {
-        // check for new updates only
-        val diffResult =
-            DiffUtil.calculateDiff(
-                DiffCallback(
-                    oldItems = this.listOfProducts,
-                    newItems = data
-                ), true
-            )
+    companion object {
+        private val PRODUCT_DIFF_CALLBACK = object : DiffUtil.ItemCallback<Product>() {
+            override fun areItemsTheSame(oldItem: Product, newItem: Product): Boolean =
+                oldItem.productID == newItem.productID
 
-        this.listOfProducts.apply {
-            clear()
-            addAll(data)
+            override fun areContentsTheSame(oldItem: Product, newItem: Product): Boolean =
+                oldItem == newItem
         }
-        diffResult.dispatchUpdatesTo(this)
     }
 }
